@@ -1,0 +1,12 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use FindBin;
+
+BEGIN {
+  unshift @INC, $_ for ("$FindBin::Bin/../lib","$FindBin::Bin/../lib/perl5");
+}
+
+require Mojolicious::Commands;
+Mojolicious::Commands->start_app('Mojolicious::Mambba');

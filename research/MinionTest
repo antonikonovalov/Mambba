@@ -1,0 +1,56 @@
+#!/usr/bin/env perl
+use Mojolicious::Lite;
+
+use Mambba::Log;
+use Sys::Hostname 'hostname';
+# Documentation browser under "/perldoc"
+plugin 'PODRenderer';
+
+plugin Minion => {'Mango::Mambba' => 'mongodb://127.0.0.1:27017/min_mambba'};
+
+  # Add tasks to your application
+app->minion->add_task(slow_log => sub {
+    # http://localhost:9200/mambba/log/_search?q=meta.job:53e8985930ae74383d050000
+    use Mojo::IOLoop;
+
+    my ($job, $msg) = @_;
+    warn "my job id".$job->id;
+
+    my $log = new Mambba::Log(
+        elasticsearch => 'http://localhost:9200/mambba/log/',
+        meta => { job => "".$job->id },
+    );
+
+    $log->debug(qq{Received message "$msg".});
+    Mojo::IOLoop->start;
+});
+
+get '/' => sub {
+  my $c = shift;
+  $c->render('index');
+};
+
+get '/task/log' => sub {
+    my $c = shift;
+    $c->minion->enqueue(slow_log => [hostname] => ['test 123']);
+    return $c->render(json => {
+        ok => 1,
+        msg => 'wait your log',
+    });
+};
+
+
+app->start;
+__DATA__
+
+@@ index.html.ep
+% layout 'default';
+% title 'Welcome';
+Welcome to the Mojolicious real-time web framework!
+
+@@ layouts/default.html.ep
+<!DOCTYPE html>
+<html>
+  <head><title><%= title %></title></head>
+  <body><%= content %></body>
+</html>
