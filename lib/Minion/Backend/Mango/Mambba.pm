@@ -6,6 +6,9 @@ use Mango::BSON qw(bson_oid bson_time);
 use Scalar::Util 'weaken';
 use Sys::Hostname 'hostname';
 
+has hosts =>
+  sub { $_[0]->mango->db->collection('hosts') };
+
 sub dequeue {
   my ($self, $oid, $timeout) = @_;
 
@@ -82,6 +85,31 @@ sub _try {
   };
 
   return $self->jobs->find_and_modify($doc);
+}
+
+sub _host {
+	my $self = shift;
+	my $host = $self->hosts->find_one({original_name => hostname});
+
+  $host = $self->hosts->create({
+      original_name => hostname,
+      name => hostname,
+      dsc => 'created when start workers'
+    })
+      unless $host;
+
+	return $host;
+
+}
+sub register_worker {
+	my $self = shift;
+
+  $self->workers->insert({
+    host => hostname,
+    pid => $$,
+    started => bson_time,
+    host_id => $self->_host->{_id}
+  });
 }
 
 1;

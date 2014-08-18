@@ -183,33 +183,33 @@ sub startup {
 #          });
 #    });
 
-#    $r->get('api/jobs' => sub {
-#          my $self = shift;
-#          $self->res->headers->content_type('application/json;charset=UTF-8');
-#          $self->render_later;
-#          my $page = $self->param('page') // 1;
-#          my $limit = $self->param('limit') // 10;
-#          my $skip = ($page-1)*$limit;
-#          my $c = $self->minion->backend->jobs->find->skip($skip)->limit($limit)->sort({started => -1});
-#
-#          my $clone = $c->clone;
-#          $c->all(sub{
-#                my ($cursor, $err, $docs) = @_;
-#
-#                if ($err) {
-#                    $self->render(json => {
-#                        ok => 0,
-#                        msg => $err
-#                    });
-#                } else {
-#                    $self->render(json => {
-#                        ok => 1,
-#                        data => $docs
-#                    });
-#                }
-#          });
-#
-#    });
+    $r->get('api/jobs' => sub {
+          my $self = shift;
+          $self->res->headers->content_type('application/json;charset=UTF-8');
+          $self->render_later;
+          my $page = $self->param('page') // 1;
+          my $limit = $self->param('limit') // 10;
+          my $skip = ($page-1)*$limit;
+          my $c = $self->minion->backend->jobs->find->skip($skip)->limit($limit)->sort({started => -1});
+
+          my $clone = $c->clone;
+          $c->all(sub{
+                my ($cursor, $err, $docs) = @_;
+
+                if ($err) {
+                    $self->render(json => {
+                        ok => 0,
+                        msg => $err
+                    });
+                } else {
+                    $self->render(json => {
+                        ok => 1,
+                        data => $docs
+                    });
+                }
+          });
+
+    });
 
 #    $r->get('api/log' => sub {
 #        my $c = shift;

@@ -53,3 +53,13 @@ sub append {
 
 
 1;
+
+=pod
+
+ log for
+   - server $mambba->prefix.'/log'
+   - servise $mambba->prefix.'/'. service_name
+   - job $mambba->prefix.'/'. task_name
+   - worker $mambba->prefix.'/'. worker
+
+=cut
