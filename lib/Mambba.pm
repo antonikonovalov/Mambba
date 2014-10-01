@@ -9,9 +9,12 @@ use Mambba::Host;
 use Mambba::Service;
 use Mambba::Requires;
 
+
+
 use Data::Dump qw/dump/;
 
 use Mango::BSON  qw/bson_oid/;
+use Mojo::Collection qw/c/;
 
 our $VERSION = '0.0.1';
 
@@ -46,6 +49,25 @@ sub new {
   return $self;
 }
 
+sub _task {
+	my $self = shift;
+	$self->app->minion->add_task(task_runner => sub {
+
+#		my ($job, $msg) = @_;
+		my $args = c(@_);
+
+		warn "task runner => $args";
+	});
+
+	$self->app->minion->add_task(task_installer => sub {
+
+  #		my ($job, $msg) = @_;
+  		my $args = c(@_);
+
+  		warn "task runner => $args";
+  });
+}
+
 sub _router {
 	my $self = shift;
 
@@ -59,12 +81,68 @@ sub _router {
 		$c->res->headers->header( 'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With' );
   });
 
+=pod
+
+	require => {
+		lib => 'My::Lib'
+    intaller => 'cpanm'
+    install_from => 'cpan'||'mirror'||'git'
+		mirror => 'develop.als.local:3001'
+		git => 'git://src-tms.als.local/tms/mymodule'
+    lang => 'perl'
+    is_task => 0 || 1
+    hosts => [
+      {
+        host_id => '12wer',
+        host    => 'antoniko.local',
+        version => "v0.0.3",
+        status: 'install' || 'broken' || 'not install yet' || 'uninstall'
+        last_update => 123123 # date update or install
+      }
+    ]
+	}
+
+=cut
 
 	$r->mango_api('requires');
   $r->mango_api('services');
   $r->mango_api('hosts');
+
+=pod
+
+	task => {
+		label => 'dev_test_task',
+		require_id => 'asdasdasd234',
+		params => ['first_args','second_arg']
+	}
+
+=cut
+
   $r->mango_api('tasks');
 
+	# host
+	$r->post( $self->prefix.'/requires/:oid/hosts' => sub {
+		my $c = shift;
+    my $oid = bson_oid( $c->stash('oid') );
+    $c->render_later;
+
+    $c->requires->find_one($oid => sub {
+			my ($cursor, $err, $doc) = @_;
+
+			my $hosts = c(@{$doc->{hosts}});
+			return
+				$c->render(json => { ok => 0, msg => $err})
+					if $err or !c(@{$doc->{hosts}});
+
+
+			$hosts->map(sub { $c->minion->enqueue(task_installer => [$_->{host}] => [$doc]) });
+
+			$c->render(json => {
+				ok => 1,
+				msg => 'start install'
+			});
+    });
+	});
   # workers
   # get workers for hosts
   $r->get( $self->prefix.'/hosts/:oid/workers'  => sub {

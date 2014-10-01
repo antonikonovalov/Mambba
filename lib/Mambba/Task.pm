@@ -1,9 +1,11 @@
 package Mambba::Task;
 
-use Mojo::Base 'Mojolicious::Command';
+use Mojo::Base -base;
 use Mambba::Log;
 
 has 'job';
+has 'log';
+
 
 1;
 

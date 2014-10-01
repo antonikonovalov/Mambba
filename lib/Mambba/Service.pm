@@ -2,7 +2,6 @@ package Mambba::Service;
 
 use Mojo::Server::Hypnotoad::Mambba;
 
-
 sub start {
     my ($job, $service ) = @_;
 
